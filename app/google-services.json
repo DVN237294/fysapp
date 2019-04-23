@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "826447092334",
+    "firebase_url": "https://fysapp-60bbe.firebaseio.com",
+    "project_id": "fysapp-60bbe",
+    "storage_bucket": "fysapp-60bbe.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:826447092334:android:ebb34f16c4424d53",
+        "android_client_info": {
+          "package_name": "dk.amavin.projectfysapp"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "826447092334-lf3nu5ek95952t1cern38mg6oq68uvfl.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBnI3r6EdheaYp6ew2s52nuaCOBUMxz10Q"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "826447092334-lf3nu5ek95952t1cern38mg6oq68uvfl.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
