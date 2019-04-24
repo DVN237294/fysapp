@@ -18,7 +18,7 @@ public class GLMesh {
 
     //private short drawOrder[] = { 0, 1, 2, 0, 2, 3 }; // order to draw vertices
 
-    float color[] = { 0.63671875f, 0.76953125f, 0.22265625f, 1.0f };
+    float color[] = { 0.63671875f, 0.76953125f, 0.22265625f, 0.65f };
 
     private final int vertexStride = COORDS_PER_VERTEX * 4; // 4 bytes per vertex
     private final int vertexCount;
@@ -39,7 +39,7 @@ public class GLMesh {
     }
 
     public void draw(float[] mViewMatrix, float[] mModelMatrix, float[] mProjectionMatrix) {
-        // get handle to vertex shader's vPosition member
+        // get handle to vertex shader's a_Position member
         int positionHandle = shader.getmPositionHandle();
 
         // Enable a handle to the vertices
@@ -50,8 +50,8 @@ public class GLMesh {
                 GLES20.GL_FLOAT, false,
                 vertexStride, vertexBuffer);
 
-        // get handle to fragment shader's vColor member
-        int colorHandle = shader.getmColorHandle();
+        // get handle to fragment shader's a_Color member
+        int colorHandle = shader.getmTextureCoordsHandle();
 
         // Set color for drawing the mesh
         GLES20.glUniform4fv(colorHandle, 1, color, 0);
@@ -65,7 +65,7 @@ public class GLMesh {
         GLES20.glUniformMatrix4fv(shader.getmMVPMatrixHandle(), 1, false, mMVPMatrix, 0);
 
         // Draw the mesh
-        GLES20.glDrawArrays(GLES20.GL_TRIANGLE_FAN, 0, vertexCount);
+        GLES20.glDrawArrays(GLES20.GL_TRIANGLES, 0, vertexCount);
 
         // Disable vertex array
         GLES20.glDisableVertexAttribArray(positionHandle);

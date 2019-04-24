@@ -16,7 +16,10 @@ public class MainGLView extends GLSurfaceView {
         // Create an OpenGL ES 2.0 context
         setEGLContextClientVersion(2);
 
-        renderer = new MainGLRenderer(new ObjLoader(context, "basicman.obj"));
+        //My renderer only renders one object/mesh (man2.6.obj)
+        renderer = new MainGLRenderer(context, new ObjLoader(context, "man2.6.obj"),
+                new BMPTextureLoader(context, "drawable/texture.bmp"));
+
         // Set the Renderer for drawing on the GLSurfaceView
         setRenderer(renderer);
 

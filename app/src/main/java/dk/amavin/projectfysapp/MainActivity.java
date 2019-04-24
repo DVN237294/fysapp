@@ -9,6 +9,7 @@ import android.view.View;
 import java.util.List;
 import java.util.Map;
 
+import dk.amavin.projectfysapp.bodymodel.BodyActivity;
 import dk.amavin.projectfysapp.domain.Answer;
 import dk.amavin.projectfysapp.domain.Question;
 import dk.amavin.projectfysapp.domain.QuestionType;
@@ -24,6 +25,9 @@ public class MainActivity extends AppCompatActivity {
 
     protected void onModelOpenClick(View view)
     {
+        Intent openModelView = new Intent(this, BodyActivity.class);
+        startActivity(openModelView);
+        /*
         QuestionActivity.startQuestionIntent(this, new Question("Hello World?", QuestionType.MULTIPLE_CHOICE, 3, new Answer[]
                 {
                         new Answer("Yes", null),
@@ -49,7 +53,7 @@ public class MainActivity extends AppCompatActivity {
                         {
                                 new Answer("y", null),
                                 new Answer("n", null)
-                        }, null)));
+                        }, null)));*/
     }
 
     @Override

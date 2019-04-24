@@ -1,11 +1,22 @@
 package dk.amavin.projectfysapp.bodymodel;
+import android.content.Context;
+import android.content.res.AssetManager;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
+import android.opengl.GLUtils;
 import android.opengl.Matrix;
 import android.os.SystemClock;
 
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.FloatBuffer;
+
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
+
+import dk.amavin.projectfysapp.R;
 
 public class MainGLRenderer implements GLSurfaceView.Renderer  {
 
@@ -15,19 +26,21 @@ public class MainGLRenderer implements GLSurfaceView.Renderer  {
 
     /**
      * The view matrix. This can be thought of as our camera. This matrix transforms world space to eye space;
-     * it positions things relative to our eye.
+     * it vertices things relative to our eye.
      */
     private float[] mViewMatrix = new float[16];
 
-    private GLMesh mSquare;
+    private GLMesh mesh;
     private ObjLoader man;
     private GLShader shader;
+    private BMPTextureLoader textureLoader;
+    Context context;
 
-
-
-    public MainGLRenderer(ObjLoader obj)
+    public MainGLRenderer(Context context, ObjLoader obj, BMPTextureLoader texture)
     {
         man = obj;
+        textureLoader = texture;
+        this.context = context;
     }
 
 
@@ -35,6 +48,20 @@ public class MainGLRenderer implements GLSurfaceView.Renderer  {
     public void onSurfaceCreated(GL10 glUnused, EGLConfig config)
     {
         shader = new GLShader();
+
+        //Load in the texture coordinates
+        GLES20.glEnableVertexAttribArray(shader.getmTextureCoordsHandle());
+        float[] textureCoords = man.textureCoordinates;
+        ByteBuffer bb = ByteBuffer.allocateDirect(textureCoords.length * 4);
+        bb.order(ByteOrder.nativeOrder());
+
+        FloatBuffer textureCoordBuffer = bb.asFloatBuffer();
+        textureCoordBuffer.put(textureCoords);
+        textureCoordBuffer.position(0);
+        GLES20.glVertexAttribPointer(shader.getmTextureCoordsHandle(), 2, GLES20.GL_FLOAT, false, 8, textureCoordBuffer);
+
+        loadTexture(context, R.drawable.texture);
+
         // Set the background clear color to gray.
         GLES20.glClearColor(0.5f, 0.5f, 0.5f, 0.5f);
 
@@ -58,7 +85,16 @@ public class MainGLRenderer implements GLSurfaceView.Renderer  {
         // view matrix. In OpenGL 2, we can keep track of these matrices separately if we choose.
         Matrix.setLookAtM(mViewMatrix, 0, eyeX, eyeY, eyeZ, lookX, lookY, lookZ, upX, upY, upZ);
 
-        mSquare = new GLMesh(man.positions, shader); // top right);
+        mesh = new GLMesh(man.vertices, shader);
+
+        GLES20.glEnable(GLES20.GL_CULL_FACE);
+
+        GLES20.glFrontFace(GLES20.GL_CCW);
+
+        GLES20.glEnable(GLES20.GL_BLEND);
+        GLES20.glBlendFunc(GLES20.GL_SRC_ALPHA, GLES20.GL_ONE_MINUS_SRC_ALPHA);
+
+        GLES20.glEnable (GLES20.GL_DEPTH_TEST);
 
         GLES20.glUseProgram(shader.getProgramHandle());
     }
@@ -77,7 +113,6 @@ public class MainGLRenderer implements GLSurfaceView.Renderer  {
         final float far = 20.0f;
 
         Matrix.frustumM(projectionMatrix, 0, left, right, bottom, top, near, far);
-
     }
 
     @Override
@@ -90,6 +125,45 @@ public class MainGLRenderer implements GLSurfaceView.Renderer  {
 
         Matrix.setIdentityM(mModelMatrix, 0);
         Matrix.rotateM(mModelMatrix, 0, angleInDegrees, 0.0f, 1.0f, 0.0f);
-        mSquare.draw(mViewMatrix, mModelMatrix, projectionMatrix);
+        mesh.draw(mViewMatrix, mModelMatrix, projectionMatrix);
+    }
+
+    public static int loadTexture(final Context context, final int resourceId)
+    {
+        //Gracefully stolen from:
+        //https://www.learnopengles.com/android-lesson-four-introducing-basic-texturing/
+
+        final int[] textureHandle = new int[1];
+
+        GLES20.glGenTextures(1, textureHandle, 0);
+
+        if (textureHandle[0] != 0)
+        {
+            final BitmapFactory.Options options = new BitmapFactory.Options();
+            options.inScaled = false;   // No pre-scaling
+
+            // Read in the resource
+            final Bitmap bitmap = BitmapFactory.decodeResource(context.getResources(), resourceId, options);
+
+            // Bind to the texture in OpenGL
+            GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, textureHandle[0]);
+
+            // Set filtering
+            GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_NEAREST);
+            GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_NEAREST);
+
+            // Load the bitmap into the bound texture.
+            GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, bitmap, 0);
+
+            // Recycle the bitmap, since its data has been loaded into OpenGL.
+            bitmap.recycle();
+        }
+
+        if (textureHandle[0] == 0)
+        {
+            throw new RuntimeException("Error loading texture.");
+        }
+
+        return textureHandle[0];
     }
 }
