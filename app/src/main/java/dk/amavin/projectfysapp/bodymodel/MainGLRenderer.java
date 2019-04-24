@@ -33,13 +33,11 @@ public class MainGLRenderer implements GLSurfaceView.Renderer  {
     private GLMesh mesh;
     private ObjLoader man;
     private GLShader shader;
-    private BMPTextureLoader textureLoader;
     Context context;
 
-    public MainGLRenderer(Context context, ObjLoader obj, BMPTextureLoader texture)
+    public MainGLRenderer(Context context, ObjLoader obj)
     {
         man = obj;
-        textureLoader = texture;
         this.context = context;
     }
 
