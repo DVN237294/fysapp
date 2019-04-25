@@ -92,17 +92,18 @@ public final class ObjLoader {
             {
                 for(int k = 0; k < 3; k++)
                 {
-                    //Bad naming: Actually not an entire face, just a vertex
                     String[] faceParts = indexPairs[k + (k > 0 ? j : 0)].split("/");
                     int index = 3 * (Short.valueOf(faceParts[0]) - 1);
                     this.vertices[positionIndex++] = vertices.get(index++);
                     this.vertices[positionIndex++] = vertices.get(index++);
                     this.vertices[positionIndex++] = vertices.get(index);
 
-                    index = 2 * (Short.valueOf(faceParts[1]) - 1);
-                    textureCoordinates[normalIndex++] = textures.get(index++);
-                    // NOTE: Bitmap gets y-inverted
-                    textureCoordinates[normalIndex++] = 1 - textures.get(index);
+                    if(faceParts.length >= 2) {
+                        index = 2 * (Short.valueOf(faceParts[1]) - 1);
+                        textureCoordinates[normalIndex++] = textures.get(index++);
+                        // NOTE: Bitmap gets y-inverted
+                        textureCoordinates[normalIndex++] = 1 - textures.get(index);
+                    }
 
                     if(faceParts.length >= 3) {
                         index = 3 * (Short.valueOf(faceParts[2]) - 1);

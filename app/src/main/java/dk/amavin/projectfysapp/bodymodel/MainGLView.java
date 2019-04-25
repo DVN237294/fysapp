@@ -1,23 +1,30 @@
 package dk.amavin.projectfysapp.bodymodel;
 
+import android.app.Activity;
 import android.opengl.GLSurfaceView;
 import android.content.Context;
 import android.view.MotionEvent;
+import android.widget.Toast;
+
+import dk.amavin.projectfysapp.QuestionActivity;
+import dk.amavin.projectfysapp.domain.Answer;
+import dk.amavin.projectfysapp.domain.Question;
+import dk.amavin.projectfysapp.domain.QuestionType;
 
 
 public class MainGLView extends GLSurfaceView {
 
     private final MainGLRenderer renderer;
-
+    private final Context context;
     public MainGLView(Context context){
 
         super(context);
-
+        this.context = context;
         // Create an OpenGL ES 2.0 context
         setEGLContextClientVersion(2);
 
         //My renderer only renders one object/mesh (man2.6.obj)
-        renderer = new MainGLRenderer(context, new ObjLoader(context, "man2.6.obj"));
+        renderer = new MainGLRenderer(context);
 
         // Set the Renderer for drawing on the GLSurfaceView
         setRenderer(renderer);
@@ -36,7 +43,6 @@ public class MainGLView extends GLSurfaceView {
     public boolean onTouchEvent(MotionEvent e) {
         float x = e.getX();
         float y = e.getY();
-
         switch (e.getAction()) {
             case MotionEvent.ACTION_MOVE:
                 float dx = x - previousX;
@@ -52,9 +58,10 @@ public class MainGLView extends GLSurfaceView {
                     dy = dy * -1 ;
                 }
 
-                //renderer.setAngle(
-                  //      renderer.getAngle() +
-                    //            ((dx + dy) * TOUCH_SCALE_FACTOR));
+                float[] axis = new float[3];
+                axis[0] = -dy/dx;
+                axis[1] = 1;
+                renderer.applyRotation((dx + dy) * TOUCH_SCALE_FACTOR, new float[] { 0, 1, 0});
                 requestRender();
                 break;
 
@@ -79,5 +86,19 @@ public class MainGLView extends GLSurfaceView {
     {
         float x = e.getX();
         float y = e.getY();
+
+        long startTime = System.nanoTime();
+        if(renderer.ray_trace(x, y))
+        {
+            QuestionActivity.startQuestionIntent((Activity)context, new Question("You clicked on da' knee",
+                    QuestionType.MULTIPLE_CHOICE, 1, new Answer[] {
+                            new Answer("yay", null)
+            }, null));
+        }
+
+        long endTime = System.nanoTime();
+        long duration = (endTime - startTime) / 1000;
+
+        Toast.makeText(context, String.valueOf(duration) + "us", Toast.LENGTH_LONG).show();
     }
 }

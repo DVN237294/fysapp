@@ -10,27 +10,21 @@ import java.nio.FloatBuffer;
 public class GLMesh {
 
     private FloatBuffer vertexBuffer;
+    private float[] modelMatrix;
 
     // number of coordinates per vertex in this array
     static final int COORDS_PER_VERTEX = 3;
-    /** Allocate storage for the final combined matrix. This will be passed into the shader program. */
-    private float[] mMVPMatrix = new float[16];
-
-    //private short drawOrder[] = { 0, 1, 2, 0, 2, 3 }; // order to draw vertices
-
-    float color[] = { 0.63671875f, 0.76953125f, 0.22265625f, 0.65f };
-
     private final int vertexStride = COORDS_PER_VERTEX * 4; // 4 bytes per vertex
     private final int vertexCount;
     private GLShader shader;
-
-    public GLMesh(float[] modelVertices, GLShader shader) {
+    public GLMesh(float[] modelVertices, GLShader shader, float[] modelMatrix)
+    {
         this.shader = shader;
+        this.modelMatrix = modelMatrix;
+
         vertexCount = modelVertices.length / COORDS_PER_VERTEX;
         // initialize vertex byte buffer for shape coordinates
-        ByteBuffer bb = ByteBuffer.allocateDirect(
-                // (# of coordinate values * 4 bytes per float)
-                modelVertices.length * 4);
+        ByteBuffer bb = ByteBuffer.allocateDirect(modelVertices.length * 4); //4 bytes per float
         bb.order(ByteOrder.nativeOrder());
 
         vertexBuffer = bb.asFloatBuffer();
@@ -38,7 +32,12 @@ public class GLMesh {
         vertexBuffer.position(0);
     }
 
-    public void draw(float[] mViewMatrix, float[] mModelMatrix, float[] mProjectionMatrix) {
+    public GLMesh(float[] modelVertices, GLShader shader) {
+        this(modelVertices, shader, new float[16]);
+        Matrix.setIdentityM(modelMatrix, 0);
+    }
+
+    public void draw(float[] mViewMatrix, float[] mProjectionMatrix) {
         // get handle to vertex shader's a_Position member
         int positionHandle = shader.getmPositionHandle();
 
@@ -50,13 +49,8 @@ public class GLMesh {
                 GLES20.GL_FLOAT, false,
                 vertexStride, vertexBuffer);
 
-        // get handle to fragment shader's a_Color member
-        int colorHandle = shader.getmTextureCoordsHandle();
-
-        // Set color for drawing the mesh
-        GLES20.glUniform4fv(colorHandle, 1, color, 0);
-
-        Matrix.multiplyMM(mMVPMatrix, 0, mViewMatrix, 0, mModelMatrix, 0);
+        float[] mMVPMatrix = new float[16];
+        Matrix.multiplyMM(mMVPMatrix, 0, mViewMatrix, 0, modelMatrix, 0);
 
         // This multiplies the modelview matrix by the projection matrix, and stores the result in the MVP matrix
         // (which now contains model * view * projection).
@@ -70,6 +64,10 @@ public class GLMesh {
         // Disable vertex array
         GLES20.glDisableVertexAttribArray(positionHandle);
 
+    }
+
+    public float[] getModelMatrix() {
+        return modelMatrix;
     }
 
 }

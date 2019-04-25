@@ -1,6 +1,5 @@
 package dk.amavin.projectfysapp.bodymodel;
 import android.content.Context;
-import android.content.res.AssetManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.opengl.GLES20;
@@ -22,7 +21,6 @@ public class MainGLRenderer implements GLSurfaceView.Renderer  {
 
 
     private final float[] projectionMatrix = new float[16];
-    private float[] mModelMatrix = new float[16];
 
     /**
      * The view matrix. This can be thought of as our camera. This matrix transforms world space to eye space;
@@ -30,14 +28,38 @@ public class MainGLRenderer implements GLSurfaceView.Renderer  {
      */
     private float[] mViewMatrix = new float[16];
 
-    private GLMesh mesh;
-    private ObjLoader man;
-    private GLShader shader;
-    Context context;
+    private final float projectionNearClip = 1.0f;
+    private final float projectionFarClip = 20.0f;
+    private final float cameraFOV = 90;
 
-    public MainGLRenderer(Context context, ObjLoader obj)
+    // Position the eye behind the origin.          (X, Y, Z)
+    private float[] cameraPosition = new float[] { 0.0f, 0.0f, -10.5f};
+
+    // The xyz point in world-space that the camera is looking at
+    private float[] cameraLookAt = new float[] { 0.0f, 0.0f, 0.0f};
+
+    // Set our up vector. This is where our head would be pointing were we holding the camera.
+    private float[] cameraUpDirection = new float[] {0.0f, 1.0f, 0.0f};
+
+    private int viewWidth = 0;
+    private int viewHeight = 0;
+
+    //Ray tracing vars
+    private float[] view;
+    private float[] h;
+    private float[] v;
+
+    private GLMesh mesh;
+    private GLMesh hitboxMesh;
+    private ObjLoader modelLoader;
+    private ObjLoader hitboxLoader;
+    private GLShader shader;
+    private Context context;
+
+    public MainGLRenderer(Context context)
     {
-        man = obj;
+        modelLoader = new ObjLoader(context, "man2.6.obj");
+        hitboxLoader = new ObjLoader(context, "right_knee_hitbox.obj");
         this.context = context;
     }
 
@@ -46,44 +68,23 @@ public class MainGLRenderer implements GLSurfaceView.Renderer  {
     public void onSurfaceCreated(GL10 glUnused, EGLConfig config)
     {
         shader = new GLShader();
+        mesh = new GLMesh(modelLoader.vertices, shader);
+        hitboxMesh = new GLMesh(hitboxLoader.vertices, shader, mesh.getModelMatrix());
 
-        //Load in the texture coordinates
-        GLES20.glEnableVertexAttribArray(shader.getmTextureCoordsHandle());
-        float[] textureCoords = man.textureCoordinates;
-        ByteBuffer bb = ByteBuffer.allocateDirect(textureCoords.length * 4);
-        bb.order(ByteOrder.nativeOrder());
-
-        FloatBuffer textureCoordBuffer = bb.asFloatBuffer();
-        textureCoordBuffer.put(textureCoords);
-        textureCoordBuffer.position(0);
-        GLES20.glVertexAttribPointer(shader.getmTextureCoordsHandle(), 2, GLES20.GL_FLOAT, false, 8, textureCoordBuffer);
+        loadTextureCoords();
 
         loadTexture(context, R.drawable.texture);
 
         // Set the background clear color to gray.
         GLES20.glClearColor(0.5f, 0.5f, 0.5f, 0.5f);
 
-        // Position the eye behind the origin.
-        final float eyeX = 0.0f;
-        final float eyeY = 0.0f;
-        final float eyeZ = 10.5f;
-
-        // We are looking toward the distance
-        final float lookX = 0.0f;
-        final float lookY = 0.0f;
-        final float lookZ = -5.0f;
-
-        // Set our up vector. This is where our head would be pointing were we holding the camera.
-        final float upX = 0.0f;
-        final float upY = 1.0f;
-        final float upZ = 0.0f;
-
         // Set the view matrix. This matrix can be said to represent the camera position.
         // NOTE: In OpenGL 1, a ModelView matrix is used, which is a combination of a model and
         // view matrix. In OpenGL 2, we can keep track of these matrices separately if we choose.
-        Matrix.setLookAtM(mViewMatrix, 0, eyeX, eyeY, eyeZ, lookX, lookY, lookZ, upX, upY, upZ);
+        Matrix.setLookAtM(mViewMatrix, 0, cameraPosition[0], cameraPosition[1],
+                cameraPosition[2], cameraLookAt[0], cameraLookAt[1], cameraLookAt[2],
+                cameraUpDirection[0], cameraUpDirection[1], cameraUpDirection[2]);
 
-        mesh = new GLMesh(man.vertices, shader);
 
         GLES20.glEnable(GLES20.GL_CULL_FACE);
 
@@ -99,31 +100,60 @@ public class MainGLRenderer implements GLSurfaceView.Renderer  {
 
     @Override
     public void onSurfaceChanged(GL10 gl, int width, int height) {
+        viewHeight = height;
+        viewWidth = width;
         GLES20.glViewport(0, 0, width, height);
         GLES20.glEnable(GLES20.GL_CCW);
 
         final float ratio = (float) width / height;
-        final float left = -ratio;
-        final float right = ratio;
-        final float bottom = -1.0f;
-        final float top = 1.0f;
-        final float near = 1.0f;
-        final float far = 20.0f;
+        Matrix.perspectiveM(projectionMatrix, 0, cameraFOV, ratio, projectionNearClip, projectionFarClip);
 
-        Matrix.frustumM(projectionMatrix, 0, left, right, bottom, top, near, far);
+        //Ray tracing math inspired by:
+        //http://schabby.de/picking-opengl-ray-tracing/
+        view = vector_normalize(vector_subtract(cameraLookAt, cameraPosition));
+        h = vector_normalize(vector_crossP(view, cameraUpDirection));
+
+        float vLength = (float)Math.tan(Math.toRadians(cameraFOV) / 2) * projectionNearClip;
+        float hLength = vLength * ratio;
+
+        v = vector_scale(vector_normalize(vector_crossP(h, view)), vLength);
+        h = vector_scale(h, hLength);
     }
 
+    public void applyRotation(float angle, float[] axis)
+    {
+        float[] rotation = new float[16];
+        Matrix.setRotateM(rotation, 0, angle , axis[0], axis[1], axis[2]);
+        Matrix.multiplyMM(mesh.getModelMatrix(), 0, mesh.getModelMatrix(), 0, rotation, 0);
+    }
+
+    long lastTime = SystemClock.uptimeMillis();
     @Override
     public void onDrawFrame(GL10 gl) {
         GLES20.glClear(GLES20.GL_DEPTH_BUFFER_BIT | GLES20.GL_COLOR_BUFFER_BIT);
 
-        // Do a complete rotation every 10 seconds.
-        long time = SystemClock.uptimeMillis() % 10000L;
-        float angleInDegrees = (360.0f / 10000.0f) * ((int) time);
+        long time = SystemClock.uptimeMillis() - lastTime;
+        lastTime = SystemClock.uptimeMillis();
+        float sec = (float)time/1000;
 
-        Matrix.setIdentityM(mModelMatrix, 0);
-        Matrix.rotateM(mModelMatrix, 0, angleInDegrees, 0.0f, 1.0f, 0.0f);
-        mesh.draw(mViewMatrix, mModelMatrix, projectionMatrix);
+        applyRotation(sec*36, new float[] {0, 1, 0});
+
+        //hitboxMesh.draw(mViewMatrix, projectionMatrix);
+        mesh.draw(mViewMatrix, projectionMatrix);
+    }
+
+    private void loadTextureCoords()
+    {
+        //Load in the texture coordinates
+        GLES20.glEnableVertexAttribArray(shader.getmTextureCoordsHandle());
+        float[] textureCoords = modelLoader.textureCoordinates;
+        ByteBuffer bb = ByteBuffer.allocateDirect(textureCoords.length * 4);
+        bb.order(ByteOrder.nativeOrder());
+
+        FloatBuffer textureCoordBuffer = bb.asFloatBuffer();
+        textureCoordBuffer.put(textureCoords);
+        textureCoordBuffer.position(0);
+        GLES20.glVertexAttribPointer(shader.getmTextureCoordsHandle(), 2, GLES20.GL_FLOAT, false, 8, textureCoordBuffer);
     }
 
     public static int loadTexture(final Context context, final int resourceId)
@@ -145,16 +175,16 @@ public class MainGLRenderer implements GLSurfaceView.Renderer  {
 
             // Bind to the texture in OpenGL
             GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, textureHandle[0]);
-
-            // Set filtering
-            GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_NEAREST);
-            GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_NEAREST);
-
             // Load the bitmap into the bound texture.
             GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, bitmap, 0);
 
             // Recycle the bitmap, since its data has been loaded into OpenGL.
             bitmap.recycle();
+
+            // Set filtering
+            GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR);
+            GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_LINEAR_MIPMAP_LINEAR);
+            GLES20.glGenerateMipmap(GLES20.GL_TEXTURE_2D);
         }
 
         if (textureHandle[0] == 0)
@@ -163,5 +193,140 @@ public class MainGLRenderer implements GLSurfaceView.Renderer  {
         }
 
         return textureHandle[0];
+    }
+
+    public boolean ray_trace(float x, float y)
+    {
+        x -= viewWidth / 2;
+        x /= viewWidth / 2;
+        y = viewHeight - y;
+        y -= viewHeight / 2;
+        y /= viewHeight / 2;
+
+        float[] pos = new float[3];
+        vector3_add(pos, cameraPosition);
+        vector3_add(pos, vector_scale(view, projectionNearClip));
+        vector3_add(pos, vector_scale(h, x));
+        vector3_add(pos, vector_scale(v, y));
+        float[] dir = vector_subtract(pos, cameraPosition);
+
+        for(int i = 0; i < hitboxLoader.triangles; i++)
+        {
+            float[] vtx0 = new float[] { hitboxLoader.vertices[i * 9], hitboxLoader.vertices[i * 9 + 1], hitboxLoader.vertices[i * 9 + 2], 0};
+            float[] vtx1 = new float[] { hitboxLoader.vertices[i * 9 + 3], hitboxLoader.vertices[i * 9 + 4], hitboxLoader.vertices[i * 9 + 5], 0};
+            float[] vtx2 = new float[] { hitboxLoader.vertices[i * 9 + 6], hitboxLoader.vertices[i * 9 + 7], hitboxLoader.vertices[i * 9 + 8], 0};
+
+            Matrix.multiplyMV(vtx0, 0, hitboxMesh.getModelMatrix(), 0, vtx0, 0);
+            Matrix.multiplyMV(vtx1, 0, hitboxMesh.getModelMatrix(), 0, vtx1, 0);
+            Matrix.multiplyMV(vtx2, 0, hitboxMesh.getModelMatrix(), 0, vtx2, 0);
+
+            if(rayIntersectTriangle(pos, dir, new float[] {vtx0[0], vtx0[1], vtx0[2]},
+                    new float[] {vtx1[0], vtx1[1], vtx1[2]},
+                    new float[] {vtx2[0], vtx2[1], vtx2[2]}))
+            {
+                //we have a hit! (hurray!)
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean rayIntersectTriangle(float[] rPoint, float[] rDirection, float[] vtx0, float[] vtx1, float[] vtx2)
+    {
+        //Ray intersection math gracefully stolen from:
+        //http://www.lighthouse3d.com/tutorials/maths/ray-triangle-intersection/
+        float[] e1;
+        float[] e2;
+        float[] h;
+        float[] s;
+        float[] q;
+        float a, f, u, v;
+
+        e1 = vector_subtract(vtx1, vtx0);
+        e2 = vector_subtract(vtx2, vtx0);
+
+        h = vector_crossP(rDirection, e2);
+        a = vector_DotP(e1, h);
+
+        if (a > -0.00001 && a < 0.00001)
+            return false;
+
+        f = 1/a;
+        s = vector_subtract(rPoint, vtx0);
+
+        u = f * vector_DotP(s, h);
+
+        if (u < 0.0 || u > 1.0)
+            return false;
+
+        q = vector_crossP(s, e1);
+        v = f * vector_DotP(rDirection, q);
+
+        if (v < 0.0 || u + v > 1.0)
+            return false;
+
+        return f * vector_DotP(e2, q) > 0.00001f;
+    }
+
+    private static float[] vector_add(float[]... a)
+    {
+        float[] c = new float[a[0].length];
+        for(int i = 0; i < a.length; i++)
+            for(int k = 0; k < a[i].length; k++)
+                c[k] += a[i][k];
+
+        return c;
+    }
+    private static void vector3_add(float[] a, float[] b)
+    {
+        a[0] += b[0];
+        a[1] += b[1];
+        a[2] += b[2];
+    }
+    private static float[] vector_subtract(float[] a, float[] b)
+    {
+        float[] c = new float[a.length];
+        for(int i = 0; i < c.length; i++)
+            c[i] = a[i] - b[i];
+
+        return c;
+    }
+    private static float[] vector_crossP(float[] a, float[] b)
+    {
+        float[] c = new float[3];
+
+        c[0] = a[1] * b[2] - a[2] * b[1];
+        c[1] = a[2] * b[0] - a[0] * b[2];
+        c[2] = a[0] * b[1] - a[1] * b[0];
+
+        return c;
+    }
+    private static float[] vector_normalize(float[] a)
+    {
+        double sum = 0;
+        for (float v : a) sum += v * v;
+
+        double mag = Math.sqrt(sum);
+        float[] c = new float[a.length];
+        for(int i = 0; i < c.length; i++)
+            c[i] = (float)(a[i] / mag);
+
+        return c;
+    }
+    private static float[] vector_scale(float[] a, float scale)
+    {
+        float[] c = new float[a.length];
+        for(int i = 0; i < a.length; i++)
+            c[i] = a[i] * scale;
+
+        return c;
+    }
+    private static float vector_DotP(float[] a, float[] b)
+    {
+        float c = 0;
+        for(int i = 0; i < a.length; i++)
+            c += a[i] * b[i];
+
+        return c;
     }
 }
