@@ -195,7 +195,7 @@ public class MainGLRenderer implements GLSurfaceView.Renderer  {
         return textureHandle[0];
     }
 
-    public boolean ray_trace(float x, float y)
+    public boolean rayCast(float x, float y)
     {
         x -= viewWidth / 2;
         x /= viewWidth / 2;

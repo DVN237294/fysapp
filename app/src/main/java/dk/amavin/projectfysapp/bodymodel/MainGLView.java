@@ -88,7 +88,7 @@ public class MainGLView extends GLSurfaceView {
         float y = e.getY();
 
         long startTime = System.nanoTime();
-        if(renderer.ray_trace(x, y))
+        if(renderer.rayCast(x, y))
         {
             QuestionActivity.startQuestionIntent((Activity)context, new Question("You clicked on da' knee",
                     QuestionType.MULTIPLE_CHOICE, 1, new Answer[] {
