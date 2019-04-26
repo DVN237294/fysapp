@@ -3,6 +3,7 @@
 <android.support.constraint.ConstraintLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:theme="@style/AppTheme"
     android:layout_height="fill_parent"
     android:layout_width="fill_parent">
@@ -11,7 +12,9 @@
         android:layout_width="match_parent"
         android:layout_height="0dp"
         app:layout_constraintBottom_toTopOf="@+id/questionButtomLinearLayout"
-        app:layout_constraintTop_toTopOf="parent">
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.0"
+        tools:layout_editor_absoluteX="0dp">
 
         <android.support.constraint.ConstraintLayout
             android:id="@+id/constraintLayout"
@@ -20,10 +23,9 @@
 
             <android.support.v7.widget.Toolbar
                 android:id="@+id/questionActivityToolbar"
-                android:layout_width="match_parent"
-                android:layout_height="?attr/actionBarSize"
-                android:layout_marginTop="0dp"
-                android:background="@color/colorPrimaryDark"
+                android:layout_width="411dp"
+                android:layout_height="84dp"
+                android:background="#E0E0E0"
                 app:layout_constraintTop_toTopOf="parent"
                 app:popupTheme="@style/ThemeOverlay.AppCompat.Dark"
                 app:theme="@style/ThemeOverlay.AppCompat.Dark" />
@@ -69,6 +71,38 @@
                     app:layout_constraintTop_toTopOf="parent" />
             </android.support.constraint.ConstraintLayout>
 
+            <ImageButton
+                android:id="@+id/imageButton2"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:srcCompat="@android:drawable/ic_media_previous"
+                tools:layout_editor_absoluteX="16dp"
+                tools:layout_editor_absoluteY="16dp" />
+
+            <TextView
+                android:id="@+id/textView2"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Previous"
+                tools:layout_editor_absoluteX="72dp"
+                tools:layout_editor_absoluteY="33dp" />
+
+            <ProgressBar
+                android:id="@+id/progressBar3"
+                style="?android:attr/progressBarStyleHorizontal"
+                android:layout_width="119dp"
+                android:layout_height="8dp"
+                tools:layout_editor_absoluteX="146dp"
+                tools:layout_editor_absoluteY="66dp" />
+
+            <ImageButton
+                android:id="@+id/imageButton4"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:srcCompat="@android:drawable/ic_menu_info_details"
+                tools:layout_editor_absoluteX="339dp"
+                tools:layout_editor_absoluteY="15dp" />
+
         </android.support.constraint.ConstraintLayout>
 
     </ScrollView>
@@ -85,9 +119,15 @@
         <Button
             android:id="@+id/questionMcContinue"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="match_parent"
             android:onClick="onContinueClick"
             android:text="@string/questionContinueButton" />
     </LinearLayout>
+
+    <RadioGroup
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        tools:layout_editor_absoluteX="61dp"
+        tools:layout_editor_absoluteY="312dp" />
 
 </android.support.constraint.ConstraintLayout>

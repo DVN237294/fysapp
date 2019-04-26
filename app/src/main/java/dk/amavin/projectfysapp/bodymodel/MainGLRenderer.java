@@ -30,7 +30,7 @@ public class MainGLRenderer implements GLSurfaceView.Renderer  {
 
     private final float projectionNearClip = 1.0f;
     private final float projectionFarClip = 20.0f;
-    private final float cameraFOV = 90;
+    private final float cameraFOV = 60;
 
     // Position the eye behind the origin.          (X, Y, Z)
     private float[] cameraPosition = new float[] { 0.0f, 0.0f, -10.5f};
