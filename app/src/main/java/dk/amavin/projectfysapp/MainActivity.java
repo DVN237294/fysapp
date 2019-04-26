@@ -2,8 +2,14 @@ package dk.amavin.projectfysapp;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.design.widget.NavigationView;
+import android.support.v4.widget.DrawerLayout;
+import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.Toolbar;
+import android.view.MenuItem;
 import android.view.View;
 
 import java.util.List;
@@ -15,12 +21,25 @@ import dk.amavin.projectfysapp.domain.Question;
 import dk.amavin.projectfysapp.domain.QuestionType;
 
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        Toolbar tb = findViewById(R.id.main_page_toolbar);
+        setSupportActionBar(tb);
+
+        DrawerLayout drawer = findViewById(R.id.drawer_id);
+
+        ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(this, drawer, tb, R.string.open, R.string.close);
+
+        drawer.addDrawerListener(toggle);
+        toggle.syncState();
+
+        NavigationView navigationView = findViewById(R.id.nav_view);
+        navigationView.setNavigationItemSelectedListener(this);
     }
 
     protected void onModelOpenClick(View view)
@@ -77,4 +96,9 @@ public class MainActivity extends AppCompatActivity {
 */
     }
 
+    @Override
+    public boolean onNavigationItemSelected(@NonNull MenuItem menuItem) {
+
+        return true;
+    }
 }
