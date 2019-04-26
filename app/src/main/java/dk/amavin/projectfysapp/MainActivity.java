@@ -12,8 +12,6 @@ import java.util.Map;
 import dk.amavin.projectfysapp.bodymodel.BodyActivity;
 import dk.amavin.projectfysapp.domain.Answer;
 import dk.amavin.projectfysapp.domain.Question;
-import dk.amavin.projectfysapp.domain.QuestionType;
-
 
 public class MainActivity extends AppCompatActivity {
 
