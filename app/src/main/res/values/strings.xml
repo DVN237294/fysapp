@@ -3,4 +3,6 @@
     <string name="questionHelperTextMultiple">Select one or multiple</string>
     <string name="questionHelperTextSingle">Select one</string>
     <string name="questionContinueButton">Continue</string>
+    <string name="open">Open</string>
+    <string name="close">Close</string>
 </resources>
