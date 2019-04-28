@@ -46,7 +46,7 @@ public class MainGLRenderer implements GLSurfaceView.Renderer  {
     private int viewWidth = 0;
     private int viewHeight = 0;
 
-    //Ray tracing vars
+    //Ray casting vars
     private float[] view;
     private float[] h;
     private float[] v;
@@ -124,7 +124,7 @@ public class MainGLRenderer implements GLSurfaceView.Renderer  {
         final float ratio = (float) width / height;
         Matrix.perspectiveM(projectionMatrix, 0, cameraFOV, ratio, projectionNearClip, projectionFarClip);
 
-        //Ray tracing math inspired by:
+        //Ray casting math inspired by:
         //http://schabby.de/picking-opengl-ray-tracing/
         view = vector_normalize(vector_subtract(cameraLookAt, cameraPosition));
         h = vector_normalize(vector_crossP(view, cameraUpDirection));

@@ -8,6 +8,7 @@ import android.support.constraint.ConstraintSet;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.support.v7.widget.Toolbar;
 
@@ -52,6 +53,7 @@ public class QuestionActivity extends BaseActivity implements View.OnClickListen
         }
 
         getLayoutInflater().inflate(R.layout.activity_question_mc, findViewById(R.id.content_frame));
+
     }
 
     private void getAndDisplayQuestion(String ref)
