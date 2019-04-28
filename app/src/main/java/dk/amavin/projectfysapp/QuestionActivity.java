@@ -1,27 +1,26 @@
 package dk.amavin.projectfysapp;
 
-import android.app.Activity;
 import android.content.Intent;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
-import android.support.annotation.Nullable;
 import android.support.constraint.ConstraintLayout;
 import android.support.constraint.ConstraintSet;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
+import android.support.v7.widget.Toolbar;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Stack;
 
 import dk.amavin.projectfysapp.domain.Answer;
 import dk.amavin.projectfysapp.domain.Question;
 
-import static android.support.v4.app.ActivityOptionsCompat.makeSceneTransitionAnimation;
-
-public class QuestionActivity extends AppCompatActivity implements View.OnClickListener {
+public class QuestionActivity extends BaseActivity implements View.OnClickListener {
     private Question question;
     private ArrayList<Answer> selectedAnswers;
     private Intent returnIntent;
@@ -29,28 +28,45 @@ public class QuestionActivity extends AppCompatActivity implements View.OnClickL
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
         returnIntent = getIntent();
         Bundle questionData = returnIntent.getExtras();
-        boolean aok = false;
         if(questionData != null)
         {
-            question = (Question)questionData.get("question");
-            if(question != null) {
-                selectedAnswers = new ArrayList<>(question.getMaxAnswers());
-                switch (question.getType()) {
-                    case MULTIPLE_CHOICE:
-                        setupMultipleChoiceQuestion();
-                        aok = true;
-                        break;
-                    default:
-                        throw new RuntimeException("Not yet implemented!");
-                }
+            followUpQuestions = new Stack<>();
+            Runnable runActivity = () -> getAndDisplayQuestion(followUpQuestions.pop());
+            if(questionData.containsKey("subject"))
+            {
+                QuestionHelper.getInstance().getQuestionsForSubject((String)questionData.get("subject"), result ->
+                {
+                    if(result.length > 0)
+                    {
+                        String[] stringArray = Arrays.copyOf(result, result.length, String[].class);
+                        Collections.addAll(followUpQuestions, stringArray);
+                        runOnUiThread(runActivity);
+                    }
+                    else
+                        questionFinished(RESULT_CANCELED);
+                });
             }
         }
-        if(!aok)
+
+        getLayoutInflater().inflate(R.layout.activity_question_mc, findViewById(R.id.content_frame));
+    }
+
+    private void getAndDisplayQuestion(String ref)
+    {
+        QuestionHelper.getInstance().getQuestionByReference(ref, result ->
         {
-            activityFinished(RESULT_CANCELED);
-        }
+            if(result != null)
+                question = (Question)result[0];
+            if(question != null) {
+                selectedAnswers = new ArrayList<>(question.getMaxAnswers());
+                setupMultipleChoiceQuestion();
+            }
+            else
+                questionFinished(RESULT_CANCELED);
+        });
     }
 
     @Override
@@ -72,35 +88,34 @@ public class QuestionActivity extends AppCompatActivity implements View.OnClickL
 
         if(selectedAnswers.size() >= question.getMaxAnswers())
         {
-            activityFinished(RESULT_OK);
+            questionFinished(RESULT_OK);
         }
     }
     protected void onContinueClick(View v)
     {
-        activityFinished(RESULT_OK);
+        questionFinished(RESULT_OK);
     }
 
-    private void setupMultipleChoiceQuestion()
-    {
-        setContentView(R.layout.activity_question_mc);
+    private void setupMultipleChoiceQuestion() {
         TextView txt = findViewById(R.id.questionText);
         TextView helper = findViewById(R.id.questionMcHelperText);
+        toolbar.setTitle(question.getSubject());
         txt.setText(question.getText());
         ConstraintLayout answerLayout = findViewById(R.id.questionAnswersLayout);
+        answerLayout.removeViews(1, answerLayout.getChildCount() - 1);
+        //answerLayout.removeAllViews();
         ConstraintSet constraintSet = new ConstraintSet();
         constraintSet.clone(answerLayout);
 
-        if(question.getMaxAnswers() > 1)
+        if (question.getMaxAnswers() > 1)
             helper.setText(getString(R.string.questionHelperTextMultiple));
-        else
-        {
+        else {
             helper.setText(getString(R.string.questionHelperTextSingle));
             findViewById(R.id.questionButtomLinearLayout).setVisibility(View.GONE);
         }
 
         int idAbove = helper.getId();
-        for(Answer answer : question.getAnswers())
-        {
+        for (Answer answer : question.getAnswers()) {
             Button button = new Button(this);
             button.setId(View.generateViewId());
             button.setText(answer.getText());
@@ -120,25 +135,22 @@ public class QuestionActivity extends AppCompatActivity implements View.OnClickL
         }
     }
 
-    Stack<Question> followUpQuestions;
-    HashMap<Question, ArrayList<Answer>> result;
-    private void activityFinished(int resultCode)
+    Stack<String> followUpQuestions;
+    HashMap<Question, ArrayList<Answer>> result = new HashMap<>();;
+    private void questionFinished(int resultCode)
     {
         //make sure we ask any follow-ups
-        followUpQuestions = new Stack<>();
         if(resultCode == RESULT_OK) {
-            result = new HashMap<>();
-
-            if (question.getNextQuestion() != null)
-                followUpQuestions.push(question.getNextQuestion());
+            if (question.getFollowUpQuestion() != null)
+                followUpQuestions.push(question.getFollowUpQuestion().getPath());
             for (Answer answer : selectedAnswers)
-                if (answer.getNextQuestion() != null)
-                    followUpQuestions.push(answer.getNextQuestion());
+                if (answer.getFollowUpQuestion() != null)
+                    followUpQuestions.push(answer.getFollowUpQuestion().getPath());
 
             result.put(question, selectedAnswers);
         }
 
-        if(!handleFollowUp()) {
+        if(resultCode != RESULT_OK || !handleFollowUp()) {
             returnIntent.putExtra("result", result);
             setResult(resultCode, returnIntent);
             finish();
@@ -150,34 +162,8 @@ public class QuestionActivity extends AppCompatActivity implements View.OnClickL
         if(followUpQuestions.isEmpty())
             return false;
 
-        Question q = followUpQuestions.pop();
-        startQuestionIntent(this, q);
+        String qRef = followUpQuestions.pop();
+        getAndDisplayQuestion(qRef);
         return true;
-    }
-
-    public static void startQuestionIntent(Activity context, Question q)
-    {
-        Intent openModelView = new Intent(context, QuestionActivity.class);
-        openModelView.setFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION);
-        openModelView.putExtra("question", q);
-        context.startActivityForResult(openModelView, 0, makeSceneTransitionAnimation(context).toBundle());
-    }
-
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-
-        if(data != null) {
-            HashMap<Question, ArrayList<Answer>> subQuestionResult =
-                    (HashMap<Question, ArrayList<Answer>>) data.getExtras().get("result");
-
-            result.putAll(subQuestionResult);
-        }
-
-        if(!handleFollowUp()) {
-            returnIntent.putExtra("result", result);
-            setResult(resultCode, returnIntent);
-            finish();
-        }
     }
 }

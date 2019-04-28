@@ -15,6 +15,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "826447092334-m62bfggrshs8rtqu76f59oqbg37mnnoj.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "dk.amavin.projectfysapp",
+            "certificate_hash": "8f1b5c34a470254694e6e819a7eaebc9413eaa44"
+          }
+        },
+        {
           "client_id": "826447092334-lf3nu5ek95952t1cern38mg6oq68uvfl.apps.googleusercontent.com",
           "client_type": 3
         }

@@ -1,21 +1,23 @@
 package dk.amavin.projectfysapp.bodymodel;
 
-import android.app.Activity;
 import android.opengl.GLSurfaceView;
 import android.content.Context;
 import android.view.MotionEvent;
-import android.widget.Toast;
 
-import dk.amavin.projectfysapp.QuestionActivity;
-import dk.amavin.projectfysapp.domain.Answer;
-import dk.amavin.projectfysapp.domain.Question;
-import dk.amavin.projectfysapp.domain.QuestionType;
+import java.util.ArrayList;
 
 
 public class MainGLView extends GLSurfaceView {
 
     private final MainGLRenderer renderer;
     private final Context context;
+    private ArrayList<OnRayCastModelInterceptHandler> listeners = new ArrayList<>();
+    private final float TOUCH_SCALE_FACTOR = 180.0f / 320;
+    private float previousX;
+    private float previousY;
+    private static final int MAX_CLICK_DURATION = 200;
+    private long startClickTime;
+
     public MainGLView(Context context){
 
         super(context);
@@ -32,13 +34,7 @@ public class MainGLView extends GLSurfaceView {
         // Render the view only when there is a change in the drawing data
         //setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY);
     }
-    private final float TOUCH_SCALE_FACTOR = 180.0f / 320;
-    private float previousX;
-    private float previousY;
 
-
-    private static final int MAX_CLICK_DURATION = 200;
-    private long startClickTime;
     @Override
     public boolean onTouchEvent(MotionEvent e) {
         float x = e.getX();
@@ -82,23 +78,24 @@ public class MainGLView extends GLSurfaceView {
 
     }
 
+    public void addOnRayCastInterceptionListener(OnRayCastModelInterceptHandler listener)
+    {
+        listeners.add(listener);
+    }
+
+    private void notifyListeners(GLMesh object)
+    {
+        for(OnRayCastModelInterceptHandler listener : listeners)
+            listener.handleRayCastModelIntercept(object);
+    }
+
     private void handleClickEvent(MotionEvent e)
     {
         float x = e.getX();
         float y = e.getY();
 
-        long startTime = System.nanoTime();
-        if(renderer.rayCast(x, y))
-        {
-            QuestionActivity.startQuestionIntent((Activity)context, new Question("You clicked on da' knee",
-                    QuestionType.MULTIPLE_CHOICE, 1, new Answer[] {
-                            new Answer("yay", null)
-            }, null));
-        }
-
-        long endTime = System.nanoTime();
-        long duration = (endTime - startTime) / 1000;
-
-        Toast.makeText(context, String.valueOf(duration) + "us", Toast.LENGTH_LONG).show();
+        GLMesh objectHit = renderer.rayCast(x, y);
+        if(objectHit != null)
+            notifyListeners(objectHit);
     }
 }

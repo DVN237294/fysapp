@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 
-<android.support.constraint.ConstraintLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:theme="@style/AppTheme"
+    android:id="@+id/constraintLayout2"
+    android:layout_width="fill_parent"
     android:layout_height="fill_parent"
-    android:layout_width="fill_parent">
+    android:theme="@style/AppTheme">
 
     <ScrollView
         android:layout_width="match_parent"
@@ -20,15 +20,6 @@
             android:id="@+id/constraintLayout"
             android:layout_width="match_parent"
             android:layout_height="wrap_content">
-
-            <android.support.v7.widget.Toolbar
-                android:id="@+id/questionActivityToolbar"
-                android:layout_width="411dp"
-                android:layout_height="84dp"
-                android:background="#E0E0E0"
-                app:layout_constraintTop_toTopOf="parent"
-                app:popupTheme="@style/ThemeOverlay.AppCompat.Dark"
-                app:theme="@style/ThemeOverlay.AppCompat.Dark" />
 
             <TextView
                 android:id="@+id/questionText"
@@ -44,17 +35,16 @@
                 app:layout_constraintBottom_toTopOf="@+id/questionAnswersLayout"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@+id/questionActivityToolbar" />
+                app:layout_constraintTop_toTopOf="parent" />
+
 
             <android.support.constraint.ConstraintLayout
                 android:id="@+id/questionAnswersLayout"
                 android:layout_width="300dp"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="8dp"
-                android:layout_marginLeft="8dp"
-                android:layout_marginTop="8dp"
+                android:layout_marginTop="16dp"
                 android:layout_marginEnd="8dp"
-                android:layout_marginRight="8dp"
                 android:layout_marginBottom="24dp"
                 android:foregroundGravity="center_horizontal"
                 app:layout_constraintBottom_toBottomOf="parent"
@@ -69,40 +59,8 @@
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintTop_toTopOf="parent" />
+
             </android.support.constraint.ConstraintLayout>
-
-            <ImageButton
-                android:id="@+id/imageButton2"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                app:srcCompat="@android:drawable/ic_media_previous"
-                tools:layout_editor_absoluteX="16dp"
-                tools:layout_editor_absoluteY="15dp" />
-
-            <TextView
-                android:id="@+id/textView2"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Previous"
-                tools:layout_editor_absoluteX="72dp"
-                tools:layout_editor_absoluteY="33dp" />
-
-            <ProgressBar
-                android:id="@+id/progressBar3"
-                style="?android:attr/progressBarStyleHorizontal"
-                android:layout_width="119dp"
-                android:layout_height="8dp"
-                tools:layout_editor_absoluteX="146dp"
-                tools:layout_editor_absoluteY="66dp" />
-
-            <ImageButton
-                android:id="@+id/imageButton4"
-                android:layout_width="46dp"
-                android:layout_height="44dp"
-                android:background="#00362A2E"
-                app:srcCompat="@android:drawable/ic_menu_info_details"
-                tools:layout_editor_absoluteX="339dp"
-                tools:layout_editor_absoluteY="16dp" />
 
         </android.support.constraint.ConstraintLayout>
 
@@ -125,10 +83,5 @@
             android:text="@string/questionContinueButton" />
     </LinearLayout>
 
-    <RadioGroup
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        tools:layout_editor_absoluteX="61dp"
-        tools:layout_editor_absoluteY="312dp" />
 
 </android.support.constraint.ConstraintLayout>

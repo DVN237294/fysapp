@@ -2,7 +2,10 @@ package dk.amavin.projectfysapp.bodymodel;
 
 import android.content.Context;
 
+import com.google.common.io.Files;
+
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
@@ -13,14 +16,15 @@ public final class ObjLoader {
     //ObjLoader code gracefully stolen from Björn Kechel on stackoverflow (and modified by me to support quads):
     //https://stackoverflow.com/questions/41012719/how-to-load-and-display-obj-file-in-android-with-opengl-es-2
 
-    public final int numFaces;
-    public final int triangles;
-    public final float[] normals;
-    public final float[] textureCoordinates;
-    public final float[] vertices;
+    private Context context;
 
-    public ObjLoader(Context context, String file) {
+    public ObjLoader(Context context) {
 
+        this.context = context;
+    }
+
+    public GLMesh getMesh(String file)
+    {
         Vector<Float> vertices = new Vector<>();
         Vector<Float> normals = new Vector<>();
         Vector<Float> textures = new Vector<>();
@@ -76,12 +80,12 @@ public final class ObjLoader {
                 }
             }
         }
-        numFaces = faces.size();
-        triangles = quads*2 + (numFaces-quads);
-        int coordCount = triangles * 9;
-        this.normals = new float[coordCount];
-        textureCoordinates = new float[(numFaces-quads) * 2 * 3 + quads * 2 * 6];
-        this.vertices = new float[coordCount];
+        final int numFaces = faces.size();
+        final int triangles = quads*2 + (numFaces-quads);
+        final int coordCount = triangles * 9;
+        final float[] finalNormals = new float[coordCount];
+        final float[] textureCoordinates = new float[(numFaces-quads) * 2 * 3 + quads * 2 * 6];
+        final float[] finalVertices = new float[coordCount];
         int positionIndex = 0;
         int normalIndex = 0;
         int textureIndex = 0;
@@ -94,9 +98,9 @@ public final class ObjLoader {
                 {
                     String[] faceParts = indexPairs[k + (k > 0 ? j : 0)].split("/");
                     int index = 3 * (Short.valueOf(faceParts[0]) - 1);
-                    this.vertices[positionIndex++] = vertices.get(index++);
-                    this.vertices[positionIndex++] = vertices.get(index++);
-                    this.vertices[positionIndex++] = vertices.get(index);
+                    finalVertices[positionIndex++] = vertices.get(index++);
+                    finalVertices[positionIndex++] = vertices.get(index++);
+                    finalVertices[positionIndex++] = vertices.get(index);
 
                     if(faceParts.length >= 2) {
                         index = 2 * (Short.valueOf(faceParts[1]) - 1);
@@ -107,12 +111,15 @@ public final class ObjLoader {
 
                     if(faceParts.length >= 3) {
                         index = 3 * (Short.valueOf(faceParts[2]) - 1);
-                        this.normals[textureIndex++] = normals.get(index++);
-                        this.normals[textureIndex++] = normals.get(index++);
-                        this.normals[textureIndex++] = normals.get(index);
+                        finalNormals[textureIndex++] = normals.get(index++);
+                        finalNormals[textureIndex++] = normals.get(index++);
+                        finalNormals[textureIndex++] = normals.get(index);
                     }
                 }
             }
         }
+        GLMesh m = new GLMesh(finalVertices, textureCoordinates, finalNormals, numFaces, triangles);
+        m.setName(Files.getNameWithoutExtension(file));
+        return m;
     }
 }

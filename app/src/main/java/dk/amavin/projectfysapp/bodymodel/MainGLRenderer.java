@@ -8,9 +8,11 @@ import android.opengl.GLUtils;
 import android.opengl.Matrix;
 import android.os.SystemClock;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
+import java.util.ArrayList;
 
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
@@ -30,7 +32,7 @@ public class MainGLRenderer implements GLSurfaceView.Renderer  {
 
     private final float projectionNearClip = 1.0f;
     private final float projectionFarClip = 20.0f;
-    private final float cameraFOV = 60;
+    private final float cameraFOV = 90;
 
     // Position the eye behind the origin.          (X, Y, Z)
     private float[] cameraPosition = new float[] { 0.0f, 0.0f, -10.5f};
@@ -50,30 +52,44 @@ public class MainGLRenderer implements GLSurfaceView.Renderer  {
     private float[] v;
 
     private GLMesh mesh;
-    private GLMesh hitboxMesh;
     private ObjLoader modelLoader;
-    private ObjLoader hitboxLoader;
-    private GLShader shader;
     private Context context;
+    private ArrayList<GLMesh> hitboxes = new ArrayList<>();
+    private int textureHandle = 0;
+
 
     public MainGLRenderer(Context context)
     {
-        modelLoader = new ObjLoader(context, "man2.6.obj");
-        hitboxLoader = new ObjLoader(context, "right_knee_hitbox.obj");
+        modelLoader = new ObjLoader(context);
         this.context = context;
     }
-
 
     @Override
     public void onSurfaceCreated(GL10 glUnused, EGLConfig config)
     {
-        shader = new GLShader();
-        mesh = new GLMesh(modelLoader.vertices, shader);
-        hitboxMesh = new GLMesh(hitboxLoader.vertices, shader, mesh.getModelMatrix());
+        GLShader shader = new GLShader();
+        mesh = modelLoader.getMesh("man2.6.obj");
+        mesh.setShader(shader);
 
-        loadTextureCoords();
+        String[] hitboxePaths = null;
+        try {
+            hitboxePaths = context.getAssets().list("hitboxes/");
+        }
+        catch(IOException ex)
+        {
 
-        loadTexture(context, R.drawable.texture);
+        }
+        for(String hitbox : hitboxePaths)
+        {
+            GLMesh boxMesh = modelLoader.getMesh("hitboxes/" + hitbox);
+            boxMesh.setShader(shader);
+            boxMesh.setModelMatrix(mesh.getModelMatrix());
+            hitboxes.add(boxMesh);
+        }
+
+        loadTextureCoords(mesh, shader);
+
+        textureHandle = loadTexture(context, R.drawable.texture);
 
         // Set the background clear color to gray.
         GLES20.glClearColor(0.5f, 0.5f, 0.5f, 0.5f);
@@ -138,15 +154,16 @@ public class MainGLRenderer implements GLSurfaceView.Renderer  {
 
         applyRotation(sec*36, new float[] {0, 1, 0});
 
-        //hitboxMesh.draw(mViewMatrix, projectionMatrix);
+        //for(GLMesh hitb : hitboxes)
+        //    hitb.draw(mViewMatrix, projectionMatrix);
         mesh.draw(mViewMatrix, projectionMatrix);
     }
 
-    private void loadTextureCoords()
+    private void loadTextureCoords(GLMesh mesh, GLShader shader)
     {
         //Load in the texture coordinates
         GLES20.glEnableVertexAttribArray(shader.getmTextureCoordsHandle());
-        float[] textureCoords = modelLoader.textureCoordinates;
+        float[] textureCoords = mesh.getTextureCoordinates();
         ByteBuffer bb = ByteBuffer.allocateDirect(textureCoords.length * 4);
         bb.order(ByteOrder.nativeOrder());
 
@@ -195,7 +212,7 @@ public class MainGLRenderer implements GLSurfaceView.Renderer  {
         return textureHandle[0];
     }
 
-    public boolean rayCast(float x, float y)
+    public GLMesh rayCast(float x, float y)
     {
         x -= viewWidth / 2;
         x /= viewWidth / 2;
@@ -210,25 +227,26 @@ public class MainGLRenderer implements GLSurfaceView.Renderer  {
         vector3_add(pos, vector_scale(v, y));
         float[] dir = vector_subtract(pos, cameraPosition);
 
-        for(int i = 0; i < hitboxLoader.triangles; i++)
+        for(GLMesh obj : hitboxes)
+        for(int i = 0; i < obj.getTriangleCount(); i++)
         {
-            float[] vtx0 = new float[] { hitboxLoader.vertices[i * 9], hitboxLoader.vertices[i * 9 + 1], hitboxLoader.vertices[i * 9 + 2], 0};
-            float[] vtx1 = new float[] { hitboxLoader.vertices[i * 9 + 3], hitboxLoader.vertices[i * 9 + 4], hitboxLoader.vertices[i * 9 + 5], 0};
-            float[] vtx2 = new float[] { hitboxLoader.vertices[i * 9 + 6], hitboxLoader.vertices[i * 9 + 7], hitboxLoader.vertices[i * 9 + 8], 0};
+            float[] vtx0 = new float[] { obj.getModelVertices()[i * 9], obj.getModelVertices()[i * 9 + 1], obj.getModelVertices()[i * 9 + 2], 0};
+            float[] vtx1 = new float[] { obj.getModelVertices()[i * 9 + 3], obj.getModelVertices()[i * 9 + 4], obj.getModelVertices()[i * 9 + 5], 0};
+            float[] vtx2 = new float[] { obj.getModelVertices()[i * 9 + 6], obj.getModelVertices()[i * 9 + 7], obj.getModelVertices()[i * 9 + 8], 0};
 
-            Matrix.multiplyMV(vtx0, 0, hitboxMesh.getModelMatrix(), 0, vtx0, 0);
-            Matrix.multiplyMV(vtx1, 0, hitboxMesh.getModelMatrix(), 0, vtx1, 0);
-            Matrix.multiplyMV(vtx2, 0, hitboxMesh.getModelMatrix(), 0, vtx2, 0);
+            Matrix.multiplyMV(vtx0, 0, obj.getModelMatrix(), 0, vtx0, 0);
+            Matrix.multiplyMV(vtx1, 0, obj.getModelMatrix(), 0, vtx1, 0);
+            Matrix.multiplyMV(vtx2, 0, obj.getModelMatrix(), 0, vtx2, 0);
 
             if(rayIntersectTriangle(pos, dir, new float[] {vtx0[0], vtx0[1], vtx0[2]},
                     new float[] {vtx1[0], vtx1[1], vtx1[2]},
                     new float[] {vtx2[0], vtx2[1], vtx2[2]}))
             {
                 //we have a hit! (hurray!)
-                return true;
+                return obj;
             }
         }
-        return false;
+        return null;
     }
 
     private boolean rayIntersectTriangle(float[] rPoint, float[] rDirection, float[] vtx0, float[] vtx1, float[] vtx2)

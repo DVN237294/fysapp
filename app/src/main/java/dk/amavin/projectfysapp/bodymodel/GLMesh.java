@@ -9,17 +9,27 @@ import java.nio.FloatBuffer;
 
 public class GLMesh {
 
-    private FloatBuffer vertexBuffer;
-    private float[] modelMatrix;
-
     // number of coordinates per vertex in this array
     static final int COORDS_PER_VERTEX = 3;
+    private final FloatBuffer vertexBuffer;
+    private final float[] modelVertices;
+    private final float[] textureCoordinates;
+    private final float[] normals;
+    private final int faces;
+    private final int triangleCount;
+    private float[] modelMatrix;
+    private String name;
+
     private final int vertexStride = COORDS_PER_VERTEX * 4; // 4 bytes per vertex
     private final int vertexCount;
     private GLShader shader;
-    public GLMesh(float[] modelVertices, GLShader shader, float[] modelMatrix)
+    public GLMesh(float[] modelVertices, float[] textureCoordinates, float[] normals, int faces, int triangleCount, float[] modelMatrix)
     {
-        this.shader = shader;
+        this.modelVertices = modelVertices;
+        this.textureCoordinates = textureCoordinates;
+        this.normals = normals;
+        this.faces = faces;
+        this.triangleCount = triangleCount;
         this.modelMatrix = modelMatrix;
 
         vertexCount = modelVertices.length / COORDS_PER_VERTEX;
@@ -32,8 +42,8 @@ public class GLMesh {
         vertexBuffer.position(0);
     }
 
-    public GLMesh(float[] modelVertices, GLShader shader) {
-        this(modelVertices, shader, new float[16]);
+    public GLMesh(float[] modelVertices, float[] textureCoordinates, float[] normals, int faces, int triangleCount) {
+        this(modelVertices, textureCoordinates, normals, faces, triangleCount, new float[16]);
         Matrix.setIdentityM(modelMatrix, 0);
     }
 
@@ -70,4 +80,39 @@ public class GLMesh {
         return modelMatrix;
     }
 
+    public void setModelMatrix(float[] modelMatrix) {
+        this.modelMatrix = modelMatrix;
+    }
+
+    public float[] getModelVertices() {
+        return modelVertices;
+    }
+
+    public void setShader(GLShader shader) {
+        this.shader = shader;
+    }
+
+    public float[] getTextureCoordinates() {
+        return textureCoordinates;
+    }
+
+    public float[] getNormals() {
+        return normals;
+    }
+
+    public int getFaces() {
+        return faces;
+    }
+
+    public int getTriangleCount() {
+        return triangleCount;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
 }
