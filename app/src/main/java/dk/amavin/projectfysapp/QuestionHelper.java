@@ -1,14 +1,15 @@
 package dk.amavin.projectfysapp;
 
 import com.google.firebase.firestore.CollectionReference;
+import com.google.firebase.firestore.DocumentReference;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.FirebaseFirestoreSettings;
 import com.google.firebase.firestore.Query;
 
 import java.util.ArrayList;
-import java.util.List;
 
+import dk.amavin.projectfysapp.domain.Answer;
 import dk.amavin.projectfysapp.domain.Question;
 
 public class QuestionHelper {
@@ -30,30 +31,38 @@ public class QuestionHelper {
     }
     public void getQuestionsForSubject(String subject, OnQuestionQueryCompleteHandler handler)
     {
-        CollectionReference ref = db.collection("questions");
-        Query query = ref.whereEqualTo("Subject", subject);
+        CollectionReference ref = db.collection("Surveys");
+        Query query = ref.whereEqualTo("Name", subject);
         query.get().continueWith(task ->
         {
             if (task.isSuccessful()) {
                 ArrayList<String> questionRefs = new ArrayList<>();
                 for (DocumentSnapshot doc : task.getResult().getDocuments())
-                    questionRefs.add(doc.getReference().getPath());
+                    for(DocumentReference docref : (ArrayList<DocumentReference>)doc.get("Questions"))
+                        questionRefs.add(docref.getPath());
 
-                //List<Question> myQuestions = task.getResult().toObjects(Question.class);
-                handler.onQueryComplete(questionRefs.toArray());
+                handler.onQueryComplete(questionRefs);
             }
-            handler.onQueryComplete(null);
+            else
+                handler.onQueryComplete(null);
             return true;
         });
     }
     public void getQuestionByReference(String reference, OnQuestionQueryCompleteHandler handler)
     {
-        //CollectionReference ref = db.collection("questions");
+        getByReference(reference, Question.class, handler);
+    }
+    public void getAnswerByReference(String reference, OnQuestionQueryCompleteHandler handler)
+    {
+        getByReference(reference, Answer.class, handler);
+    }
+    public <T> void getByReference(String reference, Class<T> c, OnQuestionQueryCompleteHandler handler)
+    {
         db.document(reference).get().continueWith(task ->
         {
             if (task.isSuccessful()) {
-                Question myQuestion = task.getResult().toObject(Question.class);
-                handler.onQueryComplete(new Question[] { myQuestion});
+                T obj = task.getResult().toObject(c);
+                handler.onQueryComplete(obj);
             }
             else
                 handler.onQueryComplete(null);

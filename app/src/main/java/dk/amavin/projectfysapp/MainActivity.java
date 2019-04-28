@@ -31,22 +31,6 @@ public class MainActivity extends BaseActivity {
         startActivityForResult(openModelView, 0);
     }
 
-    private void setProgressbarVisible(boolean visible)
-    {
-        ProgressBar bar = findViewById(R.id.main_progressbar);
-        TextView txt = findViewById(R.id.main_progressbar_text);
-        if(visible)
-        {
-            bar.setVisibility(View.VISIBLE);
-            txt.setVisibility(View.VISIBLE);
-        }
-        else
-        {
-            bar.setVisibility(View.GONE);
-            txt.setVisibility(View.GONE);
-        }
-    }
-
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
@@ -75,10 +59,19 @@ public class MainActivity extends BaseActivity {
         setProgressbarVisible(false);
     }
 
-    @Override
-    protected void onPause() {
-        super.onPause();
-        //setProgressbarVisible(false);
+    private void setProgressbarVisible(boolean visible)
+    {
+        ProgressBar bar = findViewById(R.id.main_progressbar);
+        TextView txt = findViewById(R.id.main_progressbar_text);
+        if(visible)
+        {
+            bar.setVisibility(View.VISIBLE);
+            txt.setVisibility(View.VISIBLE);
+        }
+        else
+        {
+            bar.setVisibility(View.GONE);
+            txt.setVisibility(View.GONE);
+        }
     }
-
 }

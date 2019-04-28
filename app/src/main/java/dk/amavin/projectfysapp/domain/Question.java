@@ -9,19 +9,13 @@ public class Question implements Serializable {
     private String Text;
     private QuestionType type;
     private int MaxAnswers;
-    private ArrayList<Answer> Answers;
+    private transient ArrayList<DocumentReference> Answers;
+    private ArrayList<Answer> localAnswers;
     private transient DocumentReference FollowUpQuestion;
     private String Subject;
 
     private Question()
     {}
-
-    public Question(String text, QuestionType type, int maxAnswers, ArrayList<Answer> answers) {
-        this.Text = text;
-        this.type = type;
-        this.MaxAnswers = maxAnswers;
-        this.Answers = answers;
-    }
 
     public String getText() {
         return Text;
@@ -35,14 +29,22 @@ public class Question implements Serializable {
         return MaxAnswers;
     }
 
-    public ArrayList<Answer> getAnswers() {
-        return Answers;
-    }
-
     public DocumentReference getFollowUpQuestion() {
         return FollowUpQuestion;
     }
     public String getSubject() {
         return Subject;
+    }
+
+    public ArrayList<DocumentReference> getAnswers() {
+        return Answers;
+    }
+
+    public ArrayList<Answer> getLocalAnswers() {
+        return localAnswers;
+    }
+
+    public void setLocalAnswers(ArrayList<Answer> localAnswers) {
+        this.localAnswers = localAnswers;
     }
 }
