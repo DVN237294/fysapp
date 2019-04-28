@@ -5,4 +5,6 @@
     <string name="questionContinueButton">Continue</string>
     <string name="open">Open</string>
     <string name="close">Close</string>
+    <string name="loading_text">Protecting the realm..</string>
+    <string name="main_progressbar_text">What is dead may never die.</string>
 </resources>

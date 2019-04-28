@@ -4,6 +4,8 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.view.View;
+import android.widget.ProgressBar;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import java.util.List;
@@ -24,31 +26,59 @@ public class MainActivity extends BaseActivity {
 
     protected void onModelOpenClick(View view)
     {
+        setProgressbarVisible(true);
         Intent openModelView = new Intent(this, BodyActivity.class);
         startActivityForResult(openModelView, 0);
+    }
+
+    private void setProgressbarVisible(boolean visible)
+    {
+        ProgressBar bar = findViewById(R.id.main_progressbar);
+        TextView txt = findViewById(R.id.main_progressbar_text);
+        if(visible)
+        {
+            bar.setVisibility(View.VISIBLE);
+            txt.setVisibility(View.VISIBLE);
+        }
+        else
+        {
+            bar.setVisibility(View.GONE);
+            txt.setVisibility(View.GONE);
+        }
     }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
 
-        if(requestCode == 0)
-        {
-            Bundle questionData = data.getExtras();
-
-            Intent openQuestionIntent = new Intent(this, QuestionActivity.class);
-            openQuestionIntent.putExtra("subject", (String)questionData.get("subject"));
-            startActivityForResult(openQuestionIntent, 1);
-        }
-        else if(requestCode == 1) {
-            if(resultCode == RESULT_OK) {
+        if(data != null) {
+            if (requestCode == 0) {
                 Bundle questionData = data.getExtras();
-                Question question = (Question) questionData.get("question");
-                Map<Question, List<Answer>> answers = (Map<Question, List<Answer>>) questionData.get("result");
-            }
-            else
-                Toast.makeText(this, "Sorry! Not currently supported", Toast.LENGTH_LONG).show();
-        }
 
+                Intent openQuestionIntent = new Intent(this, QuestionActivity.class);
+                openQuestionIntent.putExtra("subject", (String) questionData.get("subject"));
+                startActivityForResult(openQuestionIntent, 1);
+            } else if (requestCode == 1) {
+                if (resultCode == RESULT_OK) {
+                    Bundle questionData = data.getExtras();
+                    Question question = (Question) questionData.get("question");
+                    Map<Question, List<Answer>> answers = (Map<Question, List<Answer>>) questionData.get("result");
+                } else
+                    Toast.makeText(this, "Sorry! Not currently supported", Toast.LENGTH_LONG).show();
+            }
+        }
     }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        setProgressbarVisible(false);
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        //setProgressbarVisible(false);
+    }
+
 }
