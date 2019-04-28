@@ -32,10 +32,10 @@ public class MainGLRenderer implements GLSurfaceView.Renderer  {
 
     private final float projectionNearClip = 1.0f;
     private final float projectionFarClip = 20.0f;
-    private final float cameraFOV = 90;
+    private final float cameraFOV = 100;
 
-    // Position the eye behind the origin.          (X, Y, Z)
-    private float[] cameraPosition = new float[] { 0.0f, 0.0f, -10.5f};
+    // Position the eye in front of the origin.          (X, Y, Z)
+    private float[] cameraPosition = new float[] { 0.0f, 0.0f, 10.5f};
 
     // The xyz point in world-space that the camera is looking at
     private float[] cameraLookAt = new float[] { 0.0f, 0.0f, 0.0f};
@@ -77,7 +77,7 @@ public class MainGLRenderer implements GLSurfaceView.Renderer  {
         }
         catch(IOException ex)
         {
-
+            //this should actually end the activity?
         }
         for(String hitbox : hitboxePaths)
         {
@@ -112,6 +112,8 @@ public class MainGLRenderer implements GLSurfaceView.Renderer  {
         GLES20.glEnable (GLES20.GL_DEPTH_TEST);
 
         GLES20.glUseProgram(shader.getProgramHandle());
+
+
     }
 
     @Override
@@ -152,8 +154,8 @@ public class MainGLRenderer implements GLSurfaceView.Renderer  {
         lastTime = SystemClock.uptimeMillis();
         float sec = (float)time/1000;
 
-        applyRotation(sec*36, new float[] {0, 1, 0});
 
+        applyRotation(sec*36, new float[] {0, 1, 0});
         //for(GLMesh hitb : hitboxes)
         //    hitb.draw(mViewMatrix, projectionMatrix);
         mesh.draw(mViewMatrix, projectionMatrix);

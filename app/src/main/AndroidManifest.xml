@@ -16,18 +16,9 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".bodymodel.BodyActivity">
-            <intent-filter>
-                <action android:name=".bodymodel.BodyActivity" />
-                <category android:name="android.intent.category.DEFAULT"/>
-            </intent-filter>
-        </activity>
-        <activity android:name=".QuestionActivity">
-            <intent-filter>
-                <action android:name=".QuestionActivity" />
-                <category android:name="android.intent.category.DEFAULT"/>
-            </intent-filter>
-        </activity>
+        <activity android:name=".bodymodel.BodyActivity" />
+        <activity android:name=".QuestionActivity" />
+        <activity android:name=".DiagnosisActivity" />
     </application>
 
 </manifest>

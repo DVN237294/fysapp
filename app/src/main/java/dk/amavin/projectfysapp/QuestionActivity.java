@@ -12,7 +12,6 @@ import android.widget.TextView;
 import com.google.firebase.firestore.DocumentReference;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Stack;
@@ -23,7 +22,6 @@ import dk.amavin.projectfysapp.domain.Question;
 public class QuestionActivity extends BaseActivity implements View.OnClickListener {
     private Question question;
     private ArrayList<Answer> selectedAnswers;
-    private Intent returnIntent;
     private Stack<String> followUpQuestions;
     private Stack<Question> handledQuestions;
     private int totalQuestions = 0;
@@ -33,8 +31,8 @@ public class QuestionActivity extends BaseActivity implements View.OnClickListen
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        returnIntent = getIntent();
-        Bundle questionData = returnIntent.getExtras();
+        Intent intent = getIntent();
+        Bundle questionData = intent.getExtras();
         if(questionData != null)
         {
             followUpQuestions = new Stack<>();
@@ -42,15 +40,19 @@ public class QuestionActivity extends BaseActivity implements View.OnClickListen
             Runnable runActivity = () -> getAndDisplayQuestion(followUpQuestions.pop());
             if(questionData.containsKey("subject"))
             {
-                QuestionHelper.getInstance().getQuestionsForSubject((String)questionData.get("subject"), result ->
+                DatabaseHelper.getInstance().getQuestionsForSubject((String)questionData.get("subject"), result ->
                 {
                     if(result != null)
                     {
-                        ArrayList<String> questionRefs = (ArrayList<String>)result;
-                        Collections.reverse(questionRefs);
-                        followUpQuestions.addAll(questionRefs);
-                        totalQuestions += questionRefs.size();
-                        runOnUiThread(runActivity);
+                        ArrayList<String> questionRefs = (ArrayList<String>) result;
+                        if(questionRefs.size() > 0) {
+                            Collections.reverse(questionRefs);
+                            followUpQuestions.addAll(questionRefs);
+                            totalQuestions += questionRefs.size();
+                            runOnUiThread(runActivity);
+                        }
+                        else
+                            questionFinished(RESULT_CANCELED);
                     }
                     else
                         questionFinished(RESULT_CANCELED);
@@ -64,7 +66,7 @@ public class QuestionActivity extends BaseActivity implements View.OnClickListen
 
     private void getAndDisplayQuestion(String ref)
     {
-        QuestionHelper.getInstance().getQuestionByReference(ref, result ->
+        DatabaseHelper.getInstance().getQuestionByReference(ref, result ->
         {
             if(result != null)
                 question = (Question)result;
@@ -129,33 +131,34 @@ public class QuestionActivity extends BaseActivity implements View.OnClickListen
         int[] idAbove = new int[question.getAnswers().size()];
         idAbove[0] = helper.getId();
 
-        for(int i = 0; i < idAbove.length; i++)
-        {
+        for(int i = 0; i < idAbove.length; i++) {
             final int thisId = View.generateViewId();
-            if(i < idAbove.length - 1)
+            if (i < idAbove.length - 1)
                 idAbove[i + 1] = thisId;
 
             final int thisAboveId = idAbove[i];
             DocumentReference docref = question.getAnswers().get(i);
 
-            QuestionHelper.getInstance().getAnswerByReference(docref.getPath(), result ->
-            {
-                Answer answer = (Answer)result;
-                Button button = new Button(this);
-                button.setId(thisId);
-                button.setText(answer.getText());
-                button.setOnClickListener(this);
-                button.setTag(answer);
-                button.setBackgroundResource(android.R.drawable.btn_default);
+            DatabaseHelper.getInstance().getAnswerByReference(docref.getPath(), result ->
+                    runOnUiThread(() ->
+                    {
+                        Answer answer = (Answer) result;
+                        Button button = new Button(this);
+                        button.setId(thisId);
+                        button.setText(answer.getText());
+                        button.setOnClickListener(this);
+                        button.setTag(answer);
+                        button.setBackgroundResource(android.R.drawable.btn_default);
 
-                answerLayout.addView(button);
+                        answerLayout.addView(button);
 
-                constraintSet.connect(button.getId(), ConstraintSet.TOP, thisAboveId, ConstraintSet.BOTTOM, 5);
-                constraintSet.connect(button.getId(), ConstraintSet.LEFT, ConstraintSet.PARENT_ID, ConstraintSet.LEFT, 0);
-                constraintSet.connect(button.getId(), ConstraintSet.RIGHT, ConstraintSet.PARENT_ID, ConstraintSet.RIGHT, 0);
-                constraintSet.constrainHeight(button.getId(), 175);
-                constraintSet.applyTo(answerLayout);
-            });
+                        constraintSet.connect(button.getId(), ConstraintSet.TOP, thisAboveId, ConstraintSet.BOTTOM, 5);
+                        constraintSet.connect(button.getId(), ConstraintSet.LEFT, ConstraintSet.PARENT_ID, ConstraintSet.LEFT, 0);
+                        constraintSet.connect(button.getId(), ConstraintSet.RIGHT, ConstraintSet.PARENT_ID, ConstraintSet.RIGHT, 0);
+                        constraintSet.constrainHeight(button.getId(), 175);
+                        constraintSet.applyTo(answerLayout);
+
+                    }));
         }
 
     }
@@ -179,8 +182,9 @@ public class QuestionActivity extends BaseActivity implements View.OnClickListen
         }
 
         if(resultCode != RESULT_OK || !handleFollowUp()) {
-            returnIntent.putExtra("result", result);
-            setResult(resultCode, returnIntent);
+            Intent intent = new Intent();
+            intent.putExtra("result", result);
+            setResult(resultCode, intent);
             finish();
         }
     }
@@ -190,8 +194,7 @@ public class QuestionActivity extends BaseActivity implements View.OnClickListen
         if(followUpQuestions.isEmpty())
             return false;
 
-        String qRef = followUpQuestions.pop();
-        getAndDisplayQuestion(qRef);
+        getAndDisplayQuestion(followUpQuestions.pop());
         return true;
     }
 }

@@ -12,10 +12,10 @@ import java.util.ArrayList;
 import dk.amavin.projectfysapp.domain.Answer;
 import dk.amavin.projectfysapp.domain.Question;
 
-public class QuestionHelper {
+public class DatabaseHelper {
     private FirebaseFirestore db;
-    private static QuestionHelper instance;
-    private QuestionHelper()
+    private static DatabaseHelper instance;
+    private DatabaseHelper()
     {
         db = FirebaseFirestore.getInstance();
         FirebaseFirestoreSettings settings = new FirebaseFirestoreSettings.Builder()
@@ -23,10 +23,10 @@ public class QuestionHelper {
                 .build();
         db.setFirestoreSettings(settings);
     }
-    public static QuestionHelper getInstance()
+    public static DatabaseHelper getInstance()
     {
         if(instance == null)
-            instance = new QuestionHelper();
+            instance = new DatabaseHelper();
         return instance;
     }
     public void getQuestionsForSubject(String subject, OnQuestionQueryCompleteHandler handler)
@@ -38,7 +38,7 @@ public class QuestionHelper {
             if (task.isSuccessful()) {
                 ArrayList<String> questionRefs = new ArrayList<>();
                 for (DocumentSnapshot doc : task.getResult().getDocuments())
-                    for(DocumentReference docref : (ArrayList<DocumentReference>)doc.get("Questions"))
+                    for (DocumentReference docref : (ArrayList<DocumentReference>) doc.get("Questions"))
                         questionRefs.add(docref.getPath());
 
                 handler.onQueryComplete(questionRefs);
@@ -56,20 +56,18 @@ public class QuestionHelper {
     {
         getByReference(reference, Answer.class, handler);
     }
-    public <T> void getByReference(String reference, Class<T> c, OnQuestionQueryCompleteHandler handler)
-    {
+    public <T> void getByReference(String reference, Class<T> c, OnQuestionQueryCompleteHandler handler) {
         db.document(reference).get().continueWith(task ->
         {
             if (task.isSuccessful()) {
                 T obj = task.getResult().toObject(c);
                 handler.onQueryComplete(obj);
-            }
-            else
+            } else
                 handler.onQueryComplete(null);
-
             return true;
         });
     }
+    /*
     public enum QuestionSubject
     {
         Knee("Knee");
@@ -84,5 +82,5 @@ public class QuestionHelper {
         public String getSubject() {
             return subject;
         }
-    }
+    }*/
 }

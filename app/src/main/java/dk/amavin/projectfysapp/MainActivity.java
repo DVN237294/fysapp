@@ -8,6 +8,7 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -45,12 +46,40 @@ public class MainActivity extends BaseActivity {
             } else if (requestCode == 1) {
                 if (resultCode == RESULT_OK) {
                     Bundle questionData = data.getExtras();
-                    Question question = (Question) questionData.get("question");
-                    Map<Question, List<Answer>> answers = (Map<Question, List<Answer>>) questionData.get("result");
+                    HashMap<Question, List<Answer>> answers = (HashMap<Question, List<Answer>>) questionData.get("result");
+
+                    Intent diagViewIntent = new Intent(this, DiagnosisActivity.class);
+                    diagViewIntent.putExtra("data", computeDiagnosis(answers));
+                    startActivity(diagViewIntent);
                 } else
                     Toast.makeText(this, "Sorry! Not currently supported", Toast.LENGTH_LONG).show();
             }
         }
+    }
+
+    private HashMap<String, Float> computeDiagnosis(Map<Question, List<Answer>> answers)
+    {
+        HashMap<String, Float> diagnosisMap = new HashMap<>();
+        for (Map.Entry<Question, List<Answer>> entry : answers.entrySet())
+            for(Answer ansv : entry.getValue())
+                if(ansv.getLinkedDiagnoses() != null)
+                    for(String ref : ansv.getLinkedDiagnoses())
+                    {
+                        Float count = diagnosisMap.get(ref);
+                        if(count == null)
+                            diagnosisMap.put(ref, 1.0f);
+                        else
+                            diagnosisMap.put(ref, count + 1.0f);
+                    }
+
+        float sum = 0;
+        for (Map.Entry<String, Float> entry : diagnosisMap.entrySet())
+            sum += entry.getValue();
+
+        for (Map.Entry<String, Float> entry : diagnosisMap.entrySet()) {
+            diagnosisMap.put(entry.getKey(), entry.getValue() * 100 / sum);
+        }
+        return diagnosisMap;
     }
 
     @Override
@@ -58,6 +87,8 @@ public class MainActivity extends BaseActivity {
         super.onStop();
         setProgressbarVisible(false);
     }
+
+
 
     private void setProgressbarVisible(boolean visible)
     {

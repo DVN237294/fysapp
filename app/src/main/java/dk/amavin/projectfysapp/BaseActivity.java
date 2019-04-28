@@ -40,7 +40,6 @@ public class BaseActivity extends AppCompatActivity implements NavigationView.On
         navigationViewRight.setNavigationItemSelectedListener(this);
 
         drawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED, navigationViewRight);
-
     }
 
     @Override
@@ -63,7 +62,6 @@ public class BaseActivity extends AppCompatActivity implements NavigationView.On
         }
         return true;
     }
-
 
     @Override
     protected void onPostCreate(Bundle savedInstanceState) {

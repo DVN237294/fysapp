@@ -13,7 +13,7 @@ import java.util.Vector;
 import java.util.regex.Pattern;
 
 public final class ObjLoader {
-    //ObjLoader code gracefully stolen from Björn Kechel on stackoverflow (and modified by me to support quads):
+    //ObjLoader code gracefully stolen from Björn Kechel on stackoverflow (and modified quite a bit by me):
     //https://stackoverflow.com/questions/41012719/how-to-load-and-display-obj-file-in-android-with-opengl-es-2
 
     private Context context;
